@@ -56,19 +56,34 @@ async function getFirebaseUser() {
     setTimeout(() => {
       unsubscribe()
       resolve(null)
-    }, 2000)
+    }, 5000)
   })
 }
 
 async function initFirebaseSync() {
-  if (!S || !S.uid) return false
+  if (!S) return false
   const modules = await loadFirebaseSyncModules()
   if (!modules) return false
+
   const currentUser = await getFirebaseUser()
-  if (!currentUser || currentUser.uid !== S.uid) {
+  if (!currentUser) {
     console.warn('Firebase session missing or not yet available, skipping sync')
     return false
   }
+
+  if (!S.uid) {
+    S.uid = currentUser.uid
+    if (!S.displayName && currentUser.displayName) {
+      S.displayName = currentUser.displayName
+    }
+    localStorage.setItem('crm_session', JSON.stringify(S))
+  }
+
+  if (currentUser.uid !== S.uid) {
+    console.warn('Firebase session uid mismatch. Expected:', S.uid, 'Got:', currentUser.uid)
+    return false
+  }
+
   firebaseSyncEnabled = true
   return true
 }

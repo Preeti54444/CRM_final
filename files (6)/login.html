@@ -85,12 +85,13 @@
 </div>
 
 <script type="module">
-  import { loginUser, onAuthStateChange, getCurrentUser } from '../firebase-auth.js';
+  import { loginUser, registerUser, onAuthStateChange, getCurrentUser } from '../firebase-auth.js';
   import { auth } from '../firebase-init.js';
 
   // Firebase Authentication
   window.firebaseAuth = {
     loginUser,
+    registerUser,
     onAuthStateChange,
     getCurrentUser,
     auth
@@ -175,23 +176,19 @@ async function doLogin(){
   btn.disabled=true;btn.classList.add('loading');
   document.getElementById('loadBar').style.width='60%'
 
-  // Prefer local auth for known employee accounts
   const users = getUsers();
   const user = users[email];
-  if (user) {
-    if (user.password !== password) {
-      showErr('Incorrect email or password.')
-      shakeButton()
-      btn.disabled=false;btn.classList.remove('loading');
-      document.getElementById('loadBar').style.width='0%'
-      return
-    }
-
-    const rememberMe=document.getElementById('rememberMe').checked;
+  const rememberMe=document.getElementById('rememberMe').checked;
+  const saveRememberEmail = () => {
     if(rememberMe){localStorage.setItem('crm_remember_email',email);}else{localStorage.removeItem('crm_remember_email');}
-    localStorage.setItem('crm_session',JSON.stringify({email,...user,loginTime:new Date().toISOString()}))
+  };
 
-    // Seed historical data only once
+  const saveSession = (sessionData) => {
+    saveRememberEmail();
+    localStorage.setItem('crm_session',JSON.stringify(sessionData));
+  };
+
+  const seedDefaultData = () => {
     if(!localStorage.getItem('crm_seeded')){
       try{
         const existing=JSON.parse(localStorage.getItem('crm_leads')||'[]')
@@ -208,64 +205,72 @@ async function doLogin(){
         {id:'MTG-003',title:'Govind Milk Zoom Meeting',date:'28/04/2026',time:'12:30',type:'Product Demo',attendee:'Govind Sharma',company:'Govind Milk Pvt Ltd',status:'scheduled',notes:'Explore supply chain finance options',createdBy:'saleem@fundingsathi.com',createdByName:'Saleem Khan'},
       ]))
     }
+  };
 
+  const redirectToCRM = () => {
     document.getElementById('loadBar').style.width='100%'
     setTimeout(()=>{window.location.href='crm.html'},400)
-    return;
-  }
+  };
 
-  // Unknown user: try Firebase authentication if available
   if(window.firebaseAuth && useFirebase){
     try{
       const result = await window.firebaseAuth.loginUser(email, password);
       if(result.success){
         const user = result.user;
-        const rememberMe=document.getElementById('rememberMe').checked;
-        if(rememberMe){localStorage.setItem('crm_remember_email',email);}else{localStorage.removeItem('crm_remember_email');}
-        localStorage.setItem('crm_session',JSON.stringify({
+        saveSession({
           email: user.email,
           uid: user.uid,
           displayName: user.displayName,
           role: result.role || 'sales_executive',
-          title: result.role === 'admin' ? 'Admin' : 'Sales Executive',
+          title: result.role === 'admin' ? 'Admin' : (result.role === 'manager' ? 'Manager' : 'Sales Executive'),
           initials: (user.displayName || user.email || '').split(' ').map(part => part.charAt(0)).join('').toUpperCase(),
           loginTime: new Date().toISOString()
-        }))
+        });
 
-        // Seed historical data only once
-        if(!localStorage.getItem('crm_seeded')){
-          try{
-            const existing=JSON.parse(localStorage.getItem('crm_leads')||'[]')
-            const merged=[...HISTORICAL_LEADS,...existing]
-            localStorage.setItem('crm_leads',JSON.stringify(merged))
-            localStorage.setItem('crm_seeded','v2')
-          }catch(e){console.warn('Seed error',e)}
-        }
-
-        if(!localStorage.getItem('crm_meetings')){
-          localStorage.setItem('crm_meetings',JSON.stringify([
-            {id:'MTG-001',title:'ABC Steel Corp – Product Demo',date:'25/04/2026',time:'10:00',type:'Product Demo',attendee:'Rajesh Kumar',company:'ABC Steel Corp',status:'scheduled',notes:'Bring updated pricing sheet',createdBy:'vaibhav@fundingsathi.com',createdByName:'Vaibhav Borge'},
-            {id:'MTG-002',title:'Cipla Follow-up Call',date:'24/04/2026',time:'15:00',type:'Follow-up',attendee:'Dr Priya Nair',company:'Cipla',status:'scheduled',notes:'Prepare documentation checklist',createdBy:'saleem@fundingsathi.com',createdByName:'Saleem Khan'},
-            {id:'MTG-003',title:'Govind Milk Zoom Meeting',date:'28/04/2026',time:'12:30',type:'Product Demo',attendee:'Govind Sharma',company:'Govind Milk Pvt Ltd',status:'scheduled',notes:'Explore supply chain finance options',createdBy:'saleem@fundingsathi.com',createdByName:'Saleem Khan'},
-          ]))
-        }
-
-        document.getElementById('loadBar').style.width='100%'
-        const userRole = result.role || 'sales_executive';
-        if (userRole === 'admin') {
-          setTimeout(()=>{window.location.href='crm.html'},400)
-        } else if (userRole === 'manager') {
-          setTimeout(()=>{window.location.href='crm.html'},400)
-        } else {
-          setTimeout(()=>{window.location.href='crm.html'},400)
-        }
+        seedDefaultData();
+        redirectToCRM();
         return;
-      } else {
-        console.log('Firebase auth failed, falling back to local:', result.error);
       }
+
+      const errorText = String(result.error || '').toLowerCase();
+      if(user && user.password === password && /user[- ]not[- ]found/.test(errorText)){
+        const registerResult = await window.firebaseAuth.registerUser(email, password, user.name || email, user.role || 'sales_executive');
+        if(registerResult.success){
+          const firebaseUser = registerResult.user;
+          saveSession({
+            email: firebaseUser.email,
+            uid: firebaseUser.uid,
+            displayName: firebaseUser.displayName,
+            role: registerResult.role || user.role || 'sales_executive',
+            title: registerResult.role === 'admin' ? 'Admin' : (registerResult.role === 'manager' ? 'Manager' : 'Sales Executive'),
+            initials: (firebaseUser.displayName || firebaseUser.email || '').split(' ').map(part => part.charAt(0)).join('').toUpperCase(),
+            loginTime: new Date().toISOString()
+          });
+          seedDefaultData();
+          redirectToCRM();
+          return;
+        }
+      }
+
+      console.log('Firebase auth failed, falling back to local:', result.error);
     } catch(e){
       console.log('Firebase error, falling back to local:', e);
     }
+  }
+
+  if (user) {
+    if (user.password !== password) {
+      showErr('Incorrect email or password.')
+      shakeButton()
+      btn.disabled=false;btn.classList.remove('loading');
+      document.getElementById('loadBar').style.width='0%'
+      return
+    }
+
+    saveSession({email, ...user, loginTime:new Date().toISOString()});
+    seedDefaultData();
+    redirectToCRM();
+    return;
   }
 
   showErr('Incorrect email or password.')

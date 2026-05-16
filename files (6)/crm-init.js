@@ -118,6 +118,68 @@ async function deleteFirebaseEntry(collectionName, entryId) {
   }
 }
 
+let firebaseListeners = []
+
+function stopFirebaseListeners() {
+  firebaseListeners.forEach(unsubscribe => {
+    if (typeof unsubscribe === 'function') {
+      try { unsubscribe() } catch (err) { console.warn('Error stopping Firebase listener', err) }
+    }
+  })
+  firebaseListeners = []
+}
+
+async function startFirebaseListeners() {
+  if (!firebaseSyncEnabled) return
+  const modules = await loadFirebaseSyncModules()
+  if (!modules || !modules.db || typeof modules.db.listenToCollection !== 'function') return
+
+  stopFirebaseListeners()
+
+  const subscribe = (collectionName, callback) => {
+    try {
+      const unsubscribe = modules.db.listenToCollection(collectionName, [], callback)
+      if (typeof unsubscribe === 'function') firebaseListeners.push(unsubscribe)
+    } catch (err) {
+      console.warn(`Firebase listener error for ${collectionName}`, err)
+    }
+  }
+
+  subscribe('leadJourneys', (documents) => {
+    if (!Array.isArray(documents)) return
+    saveLeadsJourney(mergeFirebaseEntries(getLeadsJourney(), documents))
+    if (typeof renderLeads === 'function') renderLeads()
+    if (typeof renderAll === 'function') renderAll()
+  })
+
+  subscribe('leads', (documents) => {
+    if (!Array.isArray(documents)) return
+    const store = DataStore.getAll()
+    store.leads = mergeFirebaseEntries(store.leads || [], documents)
+    DataStore.saveAll(store)
+    if (typeof renderLeads === 'function') renderLeads()
+    if (typeof renderAll === 'function') renderAll()
+  })
+
+  subscribe('sodReports', (documents) => {
+    if (!Array.isArray(documents)) return
+    saveSOD(mergeFirebaseEntries(getSOD(), documents))
+    if (typeof renderAll === 'function') renderAll()
+  })
+
+  subscribe('eodReports', (documents) => {
+    if (!Array.isArray(documents)) return
+    saveEOD(mergeFirebaseEntries(getEOD(), documents))
+    if (typeof renderAll === 'function') renderAll()
+  })
+
+  subscribe('wodReports', (documents) => {
+    if (!Array.isArray(documents)) return
+    saveWOD(mergeFirebaseEntries(getWOD(), documents))
+    if (typeof renderAll === 'function') renderAll()
+  })
+}
+
 async function syncFirebaseData() {
   if (!firebaseSyncEnabled) return
 
@@ -298,6 +360,7 @@ async function initSession() {
     try {
       await initFirebaseSync()
       await syncFirebaseData()
+      await startFirebaseListeners()
     } catch (e) {
       console.warn('Firebase sync failed', e)
     }

@@ -451,7 +451,7 @@ function renderLeads() {
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--gray-400);">No leads found</td></tr>'
     } else {
-      const displayData = filtered.slice(-100).reverse()
+      const displayData = filtered.slice().reverse()
       tbody.innerHTML = displayData.map(l => {
         const date = l.dateOfEntry || l.timestamp || '—'
         const exec = l.salesExecutive || '—'

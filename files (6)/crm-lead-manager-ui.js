@@ -405,6 +405,36 @@ class LeadManagerUI {
             </div>
           </div>
         </div>
+
+        <!-- Lead Creation Success Modal -->
+        <div class="modal" id="leadSuccessModal">
+          <div class="modal-content modal-large" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: 2px solid #4caf50;">
+            <div class="success-header" style="text-align: center; padding: 20px; border-bottom: 2px solid #4caf50;">
+              <div style="font-size: 48px; color: #4caf50; margin-bottom: 10px;">✓</div>
+              <h2 style="color: #4caf50; margin: 0;">Lead Created Successfully!</h2>
+              <p style="color: #666; margin-top: 5px;">Your new lead has been added to the system</p>
+            </div>
+
+            <div class="success-content" id="successContent" style="padding: 25px;">
+              <!-- Lead summary will be inserted here -->
+            </div>
+
+            <div class="success-actions" style="padding: 20px; border-top: 2px solid #ddd; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="window.leadManagerUI.viewNewLeadDetails()" style="background-color: #2196F3;">
+                👁️ View Full Details
+              </button>
+              <button class="btn btn-success" onclick="window.leadManagerUI.scrollToNewLead()" style="background-color: #4caf50;">
+                📍 Go to Lead List
+              </button>
+              <button class="btn btn-info" onclick="window.leadManagerUI.createAnotherLead()" style="background-color: #ff9800;">
+                ➕ Create Another Lead
+              </button>
+              <button class="btn btn-secondary" onclick="window.leadManagerUI.closeSuccessModal()">
+                ✕ Close
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
@@ -656,8 +686,17 @@ class LeadManagerUI {
       if (result.isDuplicate) {
         this.showDuplicateModal(result.duplicates, leadData);
       } else if (result.success) {
-        alert('Lead created successfully!');
+        // Close form modal and show success modal
         document.getElementById('newLeadModal').style.display = 'none';
+        
+        // Store the new lead data for display
+        this.lastCreatedLead = result.lead;
+        this.lastCreatedLeadId = result.lead.leadId;
+        
+        // Show success modal with lead details
+        this.showLeadSuccessModal(result.lead);
+        
+        // Reload leads in background to show new lead in the table
         await this.loadLeads();
       } else {
         alert('Error creating lead: ' + result.error);
@@ -949,7 +988,243 @@ class LeadManagerUI {
   editLead(leadId) {
     alert('Edit functionality to be implemented');
   }
-}
+
+  /**
+   * Show lead creation success modal with summary
+   */
+  showLeadSuccessModal(lead) {
+    const modal = document.getElementById('leadSuccessModal');
+    const content = document.getElementById('successContent');
+
+    // Calculate age if DOB is available
+    let age = '-';
+    if (lead.dateOfBirth) {
+      const today = new Date();
+      const birthDate = new Date(lead.dateOfBirth);
+      age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+    }
+
+    // Create summary card HTML
+    const summaryHTML = `
+      <div class="lead-success-summary" style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        
+        <!-- Key Information Card -->
+        <div class="summary-section" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+          <h3 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Lead Information</h3>
+          
+          <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            
+            <div class="info-card" style="padding: 12px; background: #f8f9fa; border-left: 4px solid #2196F3; border-radius: 4px;">
+              <div style="font-size: 12px; color: #666; font-weight: 500; margin-bottom: 5px;">Lead ID</div>
+              <div style="font-size: 18px; color: #2196F3; font-weight: bold;">${lead.leadId}</div>
+            </div>
+
+            <div class="info-card" style="padding: 12px; background: #f8f9fa; border-left: 4px solid #ff9800; border-radius: 4px;">
+              <div style="font-size: 12px; color: #666; font-weight: 500; margin-bottom: 5px;">Full Name</div>
+              <div style="font-size: 16px; color: #333; font-weight: bold;">${lead.fullName}</div>
+            </div>
+
+            <div class="info-card" style="padding: 12px; background: #f8f9fa; border-left: 4px solid #4caf50; border-radius: 4px;">
+              <div style="font-size: 12px; color: #666; font-weight: 500; margin-bottom: 5px;">Mobile Number</div>
+              <div style="font-size: 16px; color: #333; font-weight: bold;">${lead.mobile}</div>
+            </div>
+
+            <div class="info-card" style="padding: 12px; background: #f8f9fa; border-left: 4px solid #9c27b0; border-radius: 4px;">
+              <div style="font-size: 12px; color: #666; font-weight: 500; margin-bottom: 5px;">Status</div>
+              <div style="font-size: 16px; color: #9c27b0; font-weight: bold;">${lead.status || 'Fresh Lead'}</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Loan Details -->
+        <div class="summary-section" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+          <h4 style="color: #333; margin: 0 0 12px 0;">Loan Requirements</h4>
+          
+          <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            
+            <div class="info-card" style="padding: 10px; background: #e3f2fd; border-radius: 4px;">
+              <div style="font-size: 11px; color: #555; margin-bottom: 4px;">Loan Type</div>
+              <div style="font-size: 15px; color: #1976d2; font-weight: bold;">${lead.loanType}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #e8f5e9; border-radius: 4px;">
+              <div style="font-size: 11px; color: #555; margin-bottom: 4px;">Loan Amount</div>
+              <div style="font-size: 15px; color: #388e3c; font-weight: bold;">₹${this.formatNumber(lead.loanAmount || 0)}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #fff3e0; border-radius: 4px;">
+              <div style="font-size: 11px; color: #555; margin-bottom: 4px;">Loan Purpose</div>
+              <div style="font-size: 15px; color: #e65100; font-weight: bold;">${lead.loanPurpose || 'Not Specified'}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f3e5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #555; margin-bottom: 4px;">Lead Score</div>
+              <div style="font-size: 15px; color: #6a1b9a; font-weight: bold;">${lead.leadScore || 'Pending'}</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Demographics -->
+        <div class="summary-section" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+          <h4 style="color: #333; margin: 0 0 12px 0;">Demographics</h4>
+          
+          <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+            
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Age</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${age}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">City</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.city || 'Not Specified'}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">State</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.state || 'Not Specified'}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Lead Source</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.leadSource}</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Employment Info (if available) -->
+        ${lead.occupationType ? `
+        <div class="summary-section" style="padding-bottom: 15px; border-bottom: 1px solid #eee;">
+          <h4 style="color: #333; margin: 0 0 12px 0;">Employment</h4>
+          
+          <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Occupation Type</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.occupationType}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Monthly Income</div>
+              <div style="font-size: 15px; color: #388e3c; font-weight: 600;">₹${this.formatNumber(lead.monthlyIncome || 0)}</div>
+            </div>
+
+            ${lead.companyName ? `
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Company</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.companyName}</div>
+            </div>
+            ` : ''}
+
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Assignment Info -->
+        <div class="summary-section">
+          <h4 style="color: #333; margin: 0 0 12px 0;">Assignment Details</h4>
+          
+          <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Assigned To</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.assignedEmployee || 'Unassigned'}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Team / Branch</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${lead.assignedTeam || 'Not Specified'}</div>
+            </div>
+
+            <div class="info-card" style="padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Created Date</div>
+              <div style="font-size: 15px; color: #333; font-weight: 600;">${new Date(lead.dateCreated).toLocaleDateString('en-IN')}</div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    content.innerHTML = summaryHTML;
+    modal.style.display = 'block';
+
+    // Auto-scroll to success modal
+    setTimeout(() => {
+      modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
+  /**
+   * View new lead full details from success modal
+   */
+  async viewNewLeadDetails() {
+    const leadId = this.lastCreatedLeadId;
+    if (!leadId) return;
+    
+    // Close success modal
+    document.getElementById('leadSuccessModal').style.display = 'none';
+    
+    // Open details modal
+    await this.viewLeadDetails(leadId);
+  }
+
+  /**
+   * Scroll to new lead in the leads table
+   */
+  scrollToNewLead() {
+    const leadId = this.lastCreatedLeadId;
+    if (!leadId) {
+      alert('Lead ID not found');
+      return;
+    }
+
+    // Close success modal first
+    document.getElementById('leadSuccessModal').style.display = 'none';
+
+    // Find the row in the table
+    setTimeout(() => {
+      const leadRow = document.querySelector(`tr[data-lead-id="${leadId}"]`);
+      if (leadRow) {
+        leadRow.style.backgroundColor = '#fff3cd'; // Highlight
+        leadRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          leadRow.style.backgroundColor = '';
+        }, 3000);
+      } else {
+        console.log('Lead row not found. Lead might be on different page.');
+        alert('Lead is in the system. It may be on a different page. Use filters to find it.');
+      }
+    }, 100);
+  }
+
+  /**
+   * Create another lead (re-open form)
+   */
+  createAnotherLead() {
+    // Close success modal
+    document.getElementById('leadSuccessModal').style.display = 'none';
+    
+    // Open new lead form
+    this.openNewLeadModal();
+  }
+
+  /**
+   * Close success modal
+   */
+  closeSuccessModal() {
+    document.getElementById('leadSuccessModal').style.display = 'none';
+  }
 
 // Export for use in CRM system
 if (typeof module !== 'undefined' && module.exports) {

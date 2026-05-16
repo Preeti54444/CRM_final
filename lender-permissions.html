@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lender Access Permissions - CRM</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .role-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e2e8f0;
+        }
+        .role-card.admin {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+        }
+        .role-card.manager {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+        }
+        .role-card.sales {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        }
+        .role-card.processor {
+            border-color: #8b5cf6;
+            background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%);
+        }
+        .role-card.subdsa {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+        }
+        .role-card.finance {
+            border-color: #06b6d4;
+            background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%);
+        }
+        .role-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .permission-item.allowed {
+            color: #16a34a;
+        }
+        .permission-item.denied {
+            color: #dc2626;
+        }
+        .method {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status {
+            font-weight: 500;
+        }
+        .summary {
+            background: #1e293b;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+        .summary h2 {
+            margin-top: 0;
+            color: #f1f5f9;
+        }
+        .summary ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .summary li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Lender Access Control Matrix</h1>
+
+        <div class="permissions-grid">
+            <div class="role-card admin">
+                <div class="role-title">
+                    <span>👑</span>
+                    Admin (Super Admin)
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getLenders()</span>
+                    <span class="status">Full CRUD access to all lenders</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getActiveLenders()</span>
+                    <span class="status">Can view active lenders</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">createLender()</span>
+                    <span class="status">Can create new lenders</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">updateLender()</span>
+                    <span class="status">Can update lender details</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">deleteLender()</span>
+                    <span class="status">Can delete lenders</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getLenderById()</span>
+                    <span class="status">Can view specific lenders</span>
+                </div>
+            </div>
+
+            <div class="role-card manager">
+                <div class="role-title">
+                    <span>👔</span>
+                    Branch Manager / BDM
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenders()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getActiveLenders()</span>
+                    <span class="status">Read-only access to active lenders</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">createLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">updateLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">deleteLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getLenderById()</span>
+                    <span class="status">Read-only access to specific lenders</span>
+                </div>
+            </div>
+
+            <div class="role-card sales">
+                <div class="role-title">
+                    <span>📞</span>
+                    Sales Executive / Telecaller
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenders()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getActiveLenders()</span>
+                    <span class="status">Read-only access to active lenders</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">createLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">updateLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">deleteLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getLenderById()</span>
+                    <span class="status">Read-only access to specific lenders</span>
+                </div>
+            </div>
+
+            <div class="role-card processor">
+                <div class="role-title">
+                    <span>📋</span>
+                    Loan Processing Executive
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenders()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getActiveLenders()</span>
+                    <span class="status">Read-only access to active lenders</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">createLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">updateLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">deleteLender()</span>
+                    <span class="status">Access denied - Admin only</span>
+                </div>
+                <div class="permission-item allowed">
+                    <span>✅</span>
+                    <span class="method">getLenderById()</span>
+                    <span class="status">Read-only access to specific lenders</span>
+                </div>
+            </div>
+
+            <div class="role-card subdsa">
+                <div class="role-title">
+                    <span>🤝</span>
+                    Sub-DSA / Connector
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenders()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getActiveLenders()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">createLender()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">updateLender()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">deleteLender()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenderById()</span>
+                    <span class="status">Access denied</span>
+                </div>
+            </div>
+
+            <div class="role-card finance">
+                <div class="role-title">
+                    <span>💰</span>
+                    Finance / Accounts
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenders()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getActiveLenders()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">createLender()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">updateLender()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">deleteLender()</span>
+                    <span class="status">Access denied</span>
+                </div>
+                <div class="permission-item denied">
+                    <span>❌</span>
+                    <span class="method">getLenderById()</span>
+                    <span class="status">Access denied</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <h2>📋 Summary</h2>
+            <ul>
+                <li><strong>Admin:</strong> Full CRUD access to lender management - can create, read, update, and delete all lender records</li>
+                <li><strong>Branch Manager, Sales Executive, Loan Processing Executive:</strong> Read-only access to active lenders for reference during lead processing and sales activities</li>
+                <li><strong>Sub-DSA / Connector:</strong> No direct lender access - they work through the simplified portal and track their own leads</li>
+                <li><strong>Finance / Accounts:</strong> No direct lender access - they focus on payout reports and financial reconciliation</li>
+            </ul>
+            <p><em>Note: These permissions are enforced at the Firebase data layer and apply to the lender master panel functionality.</em></p>
+        </div>
+    </div>
+</body>
+</html>

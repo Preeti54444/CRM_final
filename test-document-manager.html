@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Manager Test Runner</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-results { margin: 20px 0; }
+        .test-pass { color: green; }
+        .test-fail { color: red; }
+        .test-summary { font-weight: bold; margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; color: #155724; }
+        .failure { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Document Manager Test Runner</h1>
+    <button onclick="runTests()">Run Document Manager Tests</button>
+    <div id="testOutput" class="test-results"></div>
+
+    <!-- Include Firebase (mock for testing) -->
+    <script type="module">
+        // Mock Firebase for testing
+        window.firebase = {
+            firestore: () => ({
+                collection: () => ({
+                    add: () => Promise.resolve({ id: 'test-id' }),
+                    where: () => ({
+                        get: () => Promise.resolve({ docs: [] }),
+                        limit: () => ({ get: () => Promise.resolve({ docs: [] }) })
+                    }),
+                    orderBy: () => ({ get: () => Promise.resolve({ docs: [] }) })
+                })
+            }),
+            storage: () => ({
+                ref: () => ({
+                    put: () => Promise.resolve({ ref: { getDownloadURL: () => Promise.resolve('test-url') } })
+                })
+            })
+        };
+
+        // Mock document for DOM operations
+        if (typeof document === 'undefined') {
+            global.document = {
+                getElementById: () => ({ style: {}, classList: { add: () => {}, remove: () => {} } }),
+                createElement: () => ({}),
+                querySelectorAll: () => [],
+                addEventListener: () => {}
+            };
+        }
+    </script>
+
+    <!-- Include test files -->
+    <script src="files (6)/test-document-manager.js"></script>
+    <script src="files (6)/crm-document-manager.js"></script>
+
+    <script>
+        async function runTests() {
+            const output = document.getElementById('testOutput');
+            output.innerHTML = '<p>Running tests...</p>';
+
+            try {
+                // Create document manager instance
+                const documentManager = new DocumentManager({
+                    db: firebase.firestore(),
+                    storage: firebase.storage()
+                });
+
+                // Create test instance
+                const tests = new DocumentManagerTests(documentManager);
+
+                // Capture console.log
+                const originalLog = console.log;
+                let logs = [];
+                console.log = (...args) => {
+                    logs.push(args.join(' '));
+                    originalLog(...args);
+                };
+
+                // Run tests
+                await tests.runAllTests();
+
+                // Restore console.log
+                console.log = originalLog;
+
+                // Display results
+                const results = logs.join('<br>');
+                output.innerHTML = `<pre>${results}</pre>`;
+
+                // Check for success
+                if (results.includes('Success Rate: 100%')) {
+                    output.innerHTML += '<div class="test-summary success">✅ All tests passed!</div>';
+                } else {
+                    output.innerHTML += '<div class="test-summary failure">❌ Some tests failed</div>';
+                }
+
+            } catch (error) {
+                output.innerHTML = `<div class="test-summary failure">❌ Test execution failed: ${error.message}</div>`;
+                console.error('Test error:', error);
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>

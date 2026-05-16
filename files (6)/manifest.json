@@ -1,0 +1,104 @@
+{
+  "name": "Funding Sathi CRM",
+  "short_name": "FS CRM",
+  "description": "AI-powered Sales CRM for Funding Sathi",
+  "start_url": "/crm.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1565c0",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard View"
+    },
+    {
+      "src": "screenshots/mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Lead",
+      "short_name": "Lead",
+      "description": "Quickly add a new lead",
+      "url": "/crm.html?action=add-lead",
+      "icons": [{ "src": "icons/lead.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Add Contact",
+      "short_name": "Contact",
+      "description": "Quickly add a new contact",
+      "url": "/crm.html?action=add-contact",
+      "icons": [{ "src": "icons/contact.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Schedule Meeting",
+      "short_name": "Meeting",
+      "description": "Schedule a new meeting",
+      "url": "/crm.html?action=schedule-meeting",
+      "icons": [{ "src": "icons/meeting.png", "sizes": "96x96" }]
+    }
+  ]
+}

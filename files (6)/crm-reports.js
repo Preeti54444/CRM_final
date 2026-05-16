@@ -418,6 +418,7 @@ function submitLead() {
 
     showToast('Lead journey entry saved successfully', 'success')
     renderDashboard()
+    if (typeof renderLeads === 'function') renderLeads()
   }, 400)
 }
 

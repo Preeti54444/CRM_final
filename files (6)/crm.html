@@ -1042,6 +1042,7 @@
                 <th>Phone</th>
                 <th>Role</th>
                 <th>Department</th>
+                <th>Tasks</th>
                 <th>Status</th>
                 <th>Joined</th>
                 <th>Actions</th>
@@ -3339,6 +3340,30 @@
 <script src="crm-activities.js"></script>
 <script src="crm-reports.js"></script>
 <script src="crm-ai.js"></script>
+
+<div class="modal-ov" id="leadSuccessModal" style="display:none;">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="leadSuccessTitle">
+    <div class="modal-header">
+      <div class="modal-hd-left">
+        <div class="modal-icon" style="background: linear-gradient(135deg, #28a745, #1e7e34); font-size: 18px;">✓</div>
+        <div>
+          <h3 class="modal-title" id="leadSuccessTitle">Lead Created Successfully</h3>
+          <p class="modal-sub">The new lead has been recorded and is available in Lead Journey.</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" aria-label="Close" onclick="closeLeadSuccessModal()">×</button>
+    </div>
+    <div class="modal-body" id="leadSuccessBody" style="gap:16px; display:grid;">
+      <!-- Lead summary will be populated here -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" type="button" onclick="closeLeadSuccessModal()">Close</button>
+      <button class="btn-outline" type="button" onclick="addAnotherLeadFromSuccess()">Add Another Lead</button>
+      <button class="btn-primary" type="button" onclick="openLeadJourneyFromSuccess()">View Lead Journey</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Direct inline function for Create Contact modal
 function openContactModal() {
@@ -3653,24 +3678,30 @@ function renderEmployees() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  tbody.innerHTML = filtered.map(emp => `
-    <tr>
-      <td><strong>${emp.name}</strong></td>
-      <td>${emp.email}</td>
-      <td>${emp.phone}</td>
-      <td><span style="background: var(--maroon-light); color: var(--maroon); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${emp.role.toUpperCase()}</span></td>
-      <td>${emp.department}</td>
-      <td><span style="background: ${emp.status === 'active' ? '#d4edda' : '#f8d7da'}; color: ${emp.status === 'active' ? '#155724' : '#721c24'}; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${emp.status}</span></td>
-      <td>${emp.joinedDate}</td>
-      <td>
-        <button class="btn btn-sm" onclick="editEmployee('${emp.email}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Edit</button>
-        <button class="btn btn-sm" onclick="deleteEmployee('${emp.email}')" style="padding: 4px 8px; font-size: 12px; background: #f8d7da; color: #721c24;">Delete</button>
-      </td>
-    </tr>
-  `).join('');
+  const tasks = DataStore.get('tasks') || [];
+
+  tbody.innerHTML = filtered.map(emp => {
+    const taskCount = tasks.filter(t => (t.assignedTo || '').toLowerCase() === emp.email.toLowerCase()).length;
+    return `
+      <tr>
+        <td><strong>${emp.name}</strong></td>
+        <td>${emp.email}</td>
+        <td>${emp.phone}</td>
+        <td><span style="background: var(--maroon-light); color: var(--maroon); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${emp.role.toUpperCase()}</span></td>
+        <td>${emp.department}</td>
+        <td style="font-weight:600;color:var(--gray-900);">${taskCount}</td>
+        <td><span style="background: ${emp.status === 'active' ? '#d4edda' : '#f8d7da'}; color: ${emp.status === 'active' ? '#155724' : '#721c24'}; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${emp.status}</span></td>
+        <td>${emp.joinedDate}</td>
+        <td>
+          <button class="btn btn-sm" onclick="editEmployee('${emp.email}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Edit</button>
+          <button class="btn btn-sm" onclick="deleteEmployee('${emp.email}')" style="padding: 4px 8px; font-size: 12px; background: #f8d7da; color: #721c24;">Delete</button>
+        </td>
+      </tr>
+    `
+  }).join('');
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--gray-500);">No employees found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: var(--gray-500);">No employees found</td></tr>';
   }
 }
 

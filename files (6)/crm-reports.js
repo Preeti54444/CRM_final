@@ -416,10 +416,94 @@ function submitLead() {
         }).catch(err => console.warn('Firebase Lead save failed', err))
       }
 
+    window.lastCreatedAdminLead = entry
+    showLeadSuccessModal(entry)
     showToast('Lead journey entry saved successfully', 'success')
     renderDashboard()
     if (typeof renderLeads === 'function') renderLeads()
+
+    const leadsNavBtn = document.querySelector('[data-sec="leads"]')
+    if (leadsNavBtn && typeof nav === 'function') {
+      nav(leadsNavBtn)
+    }
   }, 400)
+}
+
+function showLeadSuccessModal(entry) {
+  const modal = document.getElementById('leadSuccessModal')
+  const body = document.getElementById('leadSuccessBody')
+  if (!modal || !body) return
+
+  const summary = `
+    <div style="display:grid;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Lead ID</div>
+          <div style="font-size:16px;font-weight:700;color:#1d4ed8;">${entry.id}</div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#166534;margin-bottom:6px;">Status</div>
+          <div style="font-size:16px;font-weight:700;color:#166534;">${entry.currentStatus || 'New Lead'}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#fff7ed;border:1px solid #ffedd5;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#92400e;margin-bottom:6px;">Company</div>
+          <div style="font-size:16px;font-weight:700;color:#92400e;">${entry.companyName}</div>
+        </div>
+        <div style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#4338ca;margin-bottom:6px;">Contact Person</div>
+          <div style="font-size:16px;font-weight:700;color:#4338ca;">${entry.contactPerson || '—'}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#fef9c3;border:1px solid #fef08a;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#7c2d12;margin-bottom:6px;">Lead Source</div>
+          <div style="font-size:16px;font-weight:700;color:#7c2d12;">${entry.leadSource || 'Other'}</div>
+        </div>
+        <div style="background:#e0f2fe;border:1px solid #bae6fd;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#0c4a6e;margin-bottom:6px;">Created By</div>
+          <div style="font-size:16px;font-weight:700;color:#0c4a6e;">${entry.createdByName || entry.createdBy}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#475569;margin-bottom:6px;">Next Follow-up</div>
+          <div style="font-size:16px;font-weight:700;color:#0f172a;">${entry.nextFollowUp || 'Not set'}</div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;color:#475569;margin-bottom:6px;">Deal Value</div>
+          <div style="font-size:16px;font-weight:700;color:#0f172a;">${entry.dealValue || '—'}</div>
+        </div>
+      </div>
+    </div>
+  `
+
+  body.innerHTML = summary
+  modal.style.display = 'flex'
+}
+
+function closeLeadSuccessModal() {
+  const modal = document.getElementById('leadSuccessModal')
+  if (modal) modal.style.display = 'none'
+}
+
+function openLeadJourneyFromSuccess() {
+  closeLeadSuccessModal()
+  const target = document.querySelector('[data-sec=leads]')
+  if (target) nav(target)
+  if (typeof renderLeads === 'function') renderLeads()
+}
+
+function addAnotherLeadFromSuccess() {
+  closeLeadSuccessModal()
+  const target = document.querySelector('[data-sec=lead-form]')
+  if (target) nav(target)
+  const focusField = document.getElementById('lCompany')
+  if (focusField) focusField.focus()
 }
 
 // Make globally available for onclick handlers
@@ -1518,6 +1602,8 @@ function assignTask() {
   showToast('Task assigned successfully!', 'success')
   clearTaskForm()
   renderTaskAssign()
+  if (typeof renderEmployees === 'function') renderEmployees()
+  if (typeof renderDashboard === 'function') renderDashboard()
 }
 
 function clearTaskForm() {

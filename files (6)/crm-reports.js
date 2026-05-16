@@ -40,6 +40,7 @@ function submitSOD() {
     const d = getSOD()
     d.push(entry)
     saveSOD(d)
+    console.debug('SOD saved:', entry.id, 'totalSOD=', getSOD().length)
 
     // Reset form
     const sTarget = document.getElementById('sTarget')
@@ -59,12 +60,14 @@ function submitSOD() {
 
     showToast('SOD report submitted successfully', 'success')
     renderDashboard()
+    // Update SOD history view immediately so the new entry is visible
+    try { renderSODHistory() } catch (e) { /* ignore if view not present */ }
   }, 400)
 }
 
 function renderSODHistory() {
-  const q = document.getElementById('sodSearch')?.value?.toLowerCase() || ''
-  const execF = document.getElementById('sodExecF')?.value || ''
+  const q = document.getElementById('histSearch')?.value?.toLowerCase() || ''
+  const execF = document.getElementById('histExecF')?.value || ''
   let leads = mySOD()
 
   if (q) leads = leads.filter(l =>
@@ -75,14 +78,14 @@ function renderSODHistory() {
 
   if (execF) leads = leads.filter(l => l.salesExecutive === execF)
 
-  const tbody = document.getElementById('sodTableBody')
-  const showing = document.getElementById('sodShowing')
+  const tbody = document.getElementById('sodHistBody')
+  const showing = document.getElementById('sodHistCount')
 
   if (showing) showing.textContent = leads.length
 
   if (tbody) {
     if (leads.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--gray-400);">No SOD reports found</td></tr>'
+      tbody.innerHTML = '<tr><td colspan="10" style="padding:40px;text-align:center;color:var(--gray-400);">No SOD reports found</td></tr>'
     } else {
       tbody.innerHTML = leads.slice().reverse().map(l => `
         <tr style="border-bottom:1px solid var(--gray-100);">
@@ -136,6 +139,7 @@ function submitEOD() {
     const d = getEOD()
     d.push(entry)
     saveEOD(d)
+    console.debug('EOD saved:', entry.id, 'totalEOD=', getEOD().length)
 
     if (btn) {
       btn.disabled = false
@@ -144,6 +148,8 @@ function submitEOD() {
 
     showToast('EOD summary saved successfully', 'success')
     renderDashboard()
+    // Update EOD history view immediately so the new entry is visible
+    try { renderEODHistory() } catch (e) { /* ignore if view not present */ }
   }, 400)
 }
 
@@ -165,14 +171,14 @@ function renderEODHistory() {
 
   if (execF) eods = eods.filter(l => l.salesExecutive === execF)
 
-  const tbody = document.getElementById('eodTableBody')
-  const showing = document.getElementById('eodShowing')
+  const tbody = document.getElementById('eodHistBody')
+  const showing = document.getElementById('eodHistCount')
 
   if (showing) showing.textContent = eods.length
 
   if (tbody) {
     if (eods.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--gray-400);">No EOD reports found</td></tr>'
+      tbody.innerHTML = '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--gray-400);">No EOD reports found</td></tr>'
     } else {
       tbody.innerHTML = eods.slice().reverse().map(l => `
         <tr style="border-bottom:1px solid var(--gray-100);">
@@ -226,6 +232,7 @@ function submitWOD() {
     const d = getWOD()
     d.push(entry)
     saveWOD(d)
+    console.debug('WOD saved:', entry.id, 'totalWOD=', getWOD().length)
 
     if (btn) {
       btn.disabled = false
@@ -234,6 +241,8 @@ function submitWOD() {
 
     showToast('Weekly report submitted successfully', 'success')
     renderDashboard()
+    // Update WOD history view immediately so the new entry is visible
+    try { renderWODHistory() } catch (e) { /* ignore if view not present */ }
   }, 400)
 }
 
@@ -249,14 +258,14 @@ function renderWODHistory() {
 
   if (execF) wods = wods.filter(l => l.salesExecutive === execF)
 
-  const tbody = document.getElementById('wodTableBody')
-  const showing = document.getElementById('wodShowing')
+  const tbody = document.getElementById('wodHistBody')
+  const showing = document.getElementById('wodHistCount')
 
   if (showing) showing.textContent = wods.length
 
   if (tbody) {
     if (wods.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--gray-400);">No weekly reports found</td></tr>'
+      tbody.innerHTML = '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--gray-400);">No weekly reports found</td></tr>'
     } else {
       tbody.innerHTML = wods.slice().reverse().map(l => `
         <tr style="border-bottom:1px solid var(--gray-100);">

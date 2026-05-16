@@ -23,8 +23,126 @@ function getUserDisplayName(user) {
   return inferFullName(rawName, user.email)
 }
 
+// Firebase sync helpers for cross-device persistence
+let firebaseSyncEnabled = false
+let firebaseSyncModules = null
+
+async function loadFirebaseSyncModules() {
+  if (firebaseSyncModules) return firebaseSyncModules
+  try {
+    const authModule = await import('../firebase-auth.js')
+    const dbModule = await import('../firebase-database.js')
+    firebaseSyncModules = { auth: authModule, db: dbModule }
+    return firebaseSyncModules
+  } catch (error) {
+    console.warn('Firebase sync modules could not be loaded', error)
+    return null
+  }
+}
+
+async function getFirebaseUser() {
+  const modules = await loadFirebaseSyncModules()
+  if (!modules) return null
+  let user = modules.auth.getCurrentUser()
+  if (user) return user
+
+  return new Promise(resolve => {
+    const unsubscribe = modules.auth.onAuthStateChange((nextUser) => {
+      if (nextUser) {
+        unsubscribe()
+        resolve(nextUser)
+      }
+    })
+    setTimeout(() => {
+      unsubscribe()
+      resolve(null)
+    }, 2000)
+  })
+}
+
+async function initFirebaseSync() {
+  if (!S || !S.uid) return false
+  const modules = await loadFirebaseSyncModules()
+  if (!modules) return false
+  const currentUser = await getFirebaseUser()
+  if (!currentUser || currentUser.uid !== S.uid) {
+    console.warn('Firebase session missing or not yet available, skipping sync')
+    return false
+  }
+  firebaseSyncEnabled = true
+  return true
+}
+
+function mergeFirebaseEntries(existing = [], incoming = []) {
+  const merged = new Map()
+  existing.forEach(item => merged.set(String(item.id), item))
+  incoming.forEach(item => {
+    const id = String(item.id || '')
+    if (!id) return
+    const existingItem = merged.get(id)
+    merged.set(id, existingItem ? { ...existingItem, ...item } : item)
+  })
+  return Array.from(merged.values())
+}
+
+async function fetchFirebaseCollection(collectionName) {
+  const modules = await loadFirebaseSyncModules()
+  if (!modules) return []
+  const result = await modules.db.getCollection(collectionName)
+  if (!result.success) {
+    console.warn(`Unable to fetch ${collectionName} from Firebase`, result.error)
+    return []
+  }
+  return Array.isArray(result.data) ? result.data : []
+}
+
+async function saveFirebaseEntry(collectionName, entry) {
+  if (!firebaseSyncEnabled || !entry || !entry.id) return
+  const modules = await loadFirebaseSyncModules()
+  if (!modules) return
+  try {
+    await modules.db.createDocument(collectionName, entry, String(entry.id))
+  } catch (error) {
+    console.warn(`Failed to persist ${collectionName} entry to Firebase`, error)
+  }
+}
+
+async function deleteFirebaseEntry(collectionName, entryId) {
+  if (!firebaseSyncEnabled || !entryId) return
+  const modules = await loadFirebaseSyncModules()
+  if (!modules) return
+  try {
+    await modules.db.deleteDocument(collectionName, String(entryId))
+  } catch (error) {
+    console.warn(`Failed to delete ${collectionName} entry from Firebase`, error)
+  }
+}
+
+async function syncFirebaseData() {
+  if (!firebaseSyncEnabled) return
+
+  const [sodEntries, eodEntries, wodEntries, leadJourneyEntries, leadEntries] = await Promise.all([
+    fetchFirebaseCollection('sodReports'),
+    fetchFirebaseCollection('eodReports'),
+    fetchFirebaseCollection('wodReports'),
+    fetchFirebaseCollection('leadJourneys'),
+    fetchFirebaseCollection('leads')
+  ])
+
+  if (sodEntries.length) saveSOD(mergeFirebaseEntries(getSOD(), sodEntries))
+  if (eodEntries.length) saveEOD(mergeFirebaseEntries(getEOD(), eodEntries))
+  if (wodEntries.length) saveWOD(mergeFirebaseEntries(getWOD(), wodEntries))
+  if (leadJourneyEntries.length) saveLeadsJourney(mergeFirebaseEntries(getLeadsJourney(), leadJourneyEntries))
+
+  if (leadEntries.length) {
+    const store = DataStore.getAll()
+    store.leads = mergeFirebaseEntries(store.leads || [], leadEntries)
+    DataStore.saveAll(store)
+  }
+}
+
 // Initialize session
-function initSession() {
+async function initSession() {
   const raw = localStorage.getItem('crm_session')
   if (!raw) { window.location.href = 'login.html'; return }
   S = JSON.parse(raw)
@@ -176,6 +294,14 @@ function initSession() {
     if (taskAssignNav) taskAssignNav.style.display = 'flex'
   }
 
+  if (S.uid) {
+    try {
+      await initFirebaseSync()
+      await syncFirebaseData()
+    } catch (e) {
+      console.warn('Firebase sync failed', e)
+    }
+  }
   buildMonthFilter()
   prefillForms()
   renderAll()

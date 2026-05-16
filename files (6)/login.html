@@ -226,6 +226,9 @@ async function doLogin(){
           email: user.email,
           uid: user.uid,
           displayName: user.displayName,
+          role: result.role || 'sales_executive',
+          title: result.role === 'admin' ? 'Admin' : 'Sales Executive',
+          initials: (user.displayName || user.email || '').split(' ').map(part => part.charAt(0)).join('').toUpperCase(),
           loginTime: new Date().toISOString()
         }))
 

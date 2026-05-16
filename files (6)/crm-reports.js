@@ -42,6 +42,10 @@ function submitSOD() {
     saveSOD(d)
     console.debug('SOD saved:', entry.id, 'totalSOD=', getSOD().length)
 
+      if (typeof saveFirebaseEntry === 'function') {
+        saveFirebaseEntry('sodReports', entry).catch(err => console.warn('Firebase SOD save failed', err))
+      }
+
     // Reset form
     const sTarget = document.getElementById('sTarget')
     const sIndustry = document.getElementById('sIndustry')
@@ -141,6 +145,10 @@ function submitEOD() {
     saveEOD(d)
     console.debug('EOD saved:', entry.id, 'totalEOD=', getEOD().length)
 
+      if (typeof saveFirebaseEntry === 'function') {
+        saveFirebaseEntry('eodReports', entry).catch(err => console.warn('Firebase EOD save failed', err))
+      }
+
     if (btn) {
       btn.disabled = false
       btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Save EOD Summary'
@@ -233,6 +241,10 @@ function submitWOD() {
     d.push(entry)
     saveWOD(d)
     console.debug('WOD saved:', entry.id, 'totalWOD=', getWOD().length)
+
+      if (typeof saveFirebaseEntry === 'function') {
+        saveFirebaseEntry('wodReports', entry).catch(err => console.warn('Firebase WOD save failed', err))
+      }
 
     if (btn) {
       btn.disabled = false
@@ -383,6 +395,27 @@ function submitLead() {
       btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Save Lead'
     }
 
+      if (typeof saveFirebaseEntry === 'function') {
+        saveFirebaseEntry('leadJourneys', entry).catch(err => console.warn('Firebase Lead Journey save failed', err))
+      }
+      if (typeof saveFirebaseEntry === 'function') {
+        saveFirebaseEntry('leads', {
+          id: entry.id,
+          name: entry.contactPerson || entry.companyName || entry.company || 'Unknown',
+          company: entry.companyName || entry.company || '',
+          email: entry.emailId || '',
+          phone: entry.contactNumber || '',
+          status: (entry.currentStatus || 'new lead').toLowerCase(),
+          source: (entry.leadSource || 'other').toLowerCase(),
+          dealValue: parseInt((entry.dealValue || '').toString().replace(/[^0-9]/g, '')) || 0,
+          assignedTo: S.email,
+          createdBy: entry.createdBy,
+          createdByName: entry.createdByName,
+          dateOfEntry: entry.dateOfEntry,
+          timestamp: entry.timestamp
+        }).catch(err => console.warn('Firebase Lead save failed', err))
+      }
+
     showToast('Lead journey entry saved successfully', 'success')
     renderDashboard()
   }, 400)
@@ -486,6 +519,11 @@ function deleteLead(leadId) {
       return !(sameCompany && (sameContact || sameEmail || samePhone) || sameEmail || samePhone)
     })
     DataStore.saveAll(stored)
+  }
+
+  if (typeof deleteFirebaseEntry === 'function') {
+    deleteFirebaseEntry('leadJourneys', String(removedLead.id)).catch(err => console.warn('Firebase lead delete failed', err))
+    deleteFirebaseEntry('leads', String(removedLead.id)).catch(err => console.warn('Firebase lead delete failed', err))
   }
 
   showToast('Lead deleted', 'info')

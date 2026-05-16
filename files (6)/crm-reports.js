@@ -434,6 +434,7 @@ function renderLeads() {
         <tr style="border-bottom:1px solid var(--gray-100);">
           <td style="padding:14px 16px;">${date}</td>
           <td style="padding:14px 16px;color:var(--gray-700);">${exec}</td>
+          <td style="padding:14px 16px;color:var(--gray-700);">${l.createdByName || l.createdBy || '—'}</td>
           <td style="padding:14px 16px;font-weight:500;color:var(--gray-900);">${comp}</td>
           <td style="padding:14px 16px;color:var(--gray-700);">${cont}</td>
           <td style="padding:14px 16px;color:var(--gray-700);">${prod}</td>
